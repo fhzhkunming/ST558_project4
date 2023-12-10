@@ -2,7 +2,7 @@
 # ST558_Final_Project
 
 ## About this app
-This is a repo containing work from the final project for ST558 class.  
+This is repo containing work from the final project for ST558 class.  
 This project provides a straightforward Shiny application designed for exploratory data analysis and model fitting using an obesity dataset. The dataset, sourced from [kaggle](https://www.kaggle.com/datasets/aravindpcoder/obesity-or-cvd-risk-classifyregressorcluster), provides insights into estimating obesity levels in 14 to 61-year-old individuals from Mexico, Peru, and Colombia, based on their eating habits and physical conditions. The data contains 17 attributes and 2111 records, each labeled with the class variable 'NObesitydad' (Obesity Level).   
 
 The application provides a comprehensive exploration of the obesity data, presenting visualizations through plots and tables based on user selections. Additionally, users have the option to manipulate model training, fitting, and prediction for a more interactive experience.  
@@ -30,11 +30,3 @@ You can run this Shiny app from GitHub using this using this code.
 ```R
 shiny::runGitHub("fhzhkunming/ST558_project4")
 ```
-
-Your README.md file should have the following things (you can create this in R markdown or just update the
-.md file that you create with the repo):
-• Brief description of the app and its purpose.
-• A list of packages needed to run the app.
-• A line of code that would install all the packages used (so we can easily grab that and run it prior to
-running your app).
-• The shiny::runGitHub() code that we can copy and paste into RStudio to run your app.
