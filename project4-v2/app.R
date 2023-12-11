@@ -1,17 +1,25 @@
-library(shiny)
-library(tidyverse)
+# ST588 Final Project
+# Hui Fang
+
 library(DT)
-library(shinydashboard)
+library(nnet)
+library(shiny)
 library(dplyr)
 library(caret)
+library(ggplot2)
 library(lattice)
+library(Metrics)
+library(tidyverse)
+library(randomForest)
+library(shinydashboard)
 
 # Read in data 
-obesity <- read.csv("C:/Users/HFang/OneDrive - USDA/Documents/CIPM/Training/Statiscs/ST558/Project-4/ObesityDataSet.csv")
+  obesity <- read.csv("C:/Users/HFang/OneDrive - USDA/Documents/CIPM/Training/Statiscs/ST558/ST558_project4/ObesityDataSet.csv")
 
 # Pre-compute some variables to be used by app
-not_numeric <- sapply(names(obesity), function(x) !is.numeric(obesity[[x]]))
-df <- obesity
+  not_numeric <- sapply(names(obesity), function(x) !is.numeric(obesity[[x]]))
+  df <- obesity
+  raw_df <- obesity
 
 # Define UI ----
 ui <- dashboardPage(
@@ -30,6 +38,8 @@ ui <- dashboardPage(
     )
   ),
   
+#####################################
+# About tab content
 
   dashboardBody(
     tabItems(
@@ -37,7 +47,7 @@ ui <- dashboardPage(
               fluidRow(
                 withMathJax(),
                 # add a photo
-                mainPanel(style = "text-align: center;",  # Align content to the center
+                mainPanel(style = "text-align: right;",  # Align content to the center
                   imageOutput("logo")
                 ),
                 
@@ -91,6 +101,9 @@ ui <- dashboardPage(
               )
       ),
       
+ #####################################
+      # EDA tab content
+ 
       tabItem(tabName = "data_explore",
               navbarPage("EDA",
                     tabPanel("Plot", 
@@ -165,7 +178,10 @@ ui <- dashboardPage(
                ), 
         )
   ),
-
+ 
+ #######################################
+ # Modeling info sub-tab content
+  
       tabItem("hiddenmodeling", " "),
       tabItem(tabName='modeling_info',
               h1("Modeling Info"),
@@ -215,12 +231,49 @@ ui <- dashboardPage(
                     )       
               )
       ),
-      
+
+ ################################## Model fitting sub-tab
+ 
       tabItem(tabName='model_fitting',
               h1("Model Fitting"),
-              tabPanel("Model Fitting", textOutput("model_fit")
-                      )
-             ),
+              # tabPanel("Model Fitting", textOutput("model_fit")
+              #         )
+              # titlePanel("Model Fitting"),
+              sidebarLayout(
+                sidebarPanel(
+                  sliderInput("split_percentage", "Choose Train/Test Split Percentage", value = 0.7, min = 0.1, max = 0.9, step = 0.1),
+                  #Select Model type,
+                  checkboxGroupInput("model_type", "Select Model Type", choices = c("Multinomial Regression", "Random Forest")),
+                  conditionalPanel(
+                    condition = "input.model_type.includes('Multinomial Regression')",
+                    selectInput("mr_predictors", "Select Multinomial Regression Predictors",
+                                choices = setdiff(colnames(obesity), "NObeyesdad"), multiple = TRUE),
+                  ),
+                  conditionalPanel(
+                    condition = "input.model_type.includes('Random Forest')",
+                    selectInput("rf_predictors", "Select Random Forest Predictors",
+                                choices = setdiff(colnames(obesity), "NObeyesdad"), multiple = TRUE),
+                    sliderInput("rf_cv", "Select Random Forest Cross Validation Number (default = 5)", min = 2, max = 10, value = 5),
+                  ),
+                  actionButton("fit_models", "Fit Models")
+                ),
+                
+                mainPanel(
+                  tabsetPanel(
+                    tabPanel("Multinomial Regression", 
+                             verbatimTextOutput("model_summary_mr"),
+                             textOutput("comparison_stats_mr")),
+                    tabPanel("Random Forest", 
+                             plotOutput("var_importance"),
+                             textOutput("comparison_stats_rf"),
+                             dataTableOutput("rf_fit_results")
+                    )
+                  )
+                )
+              )
+           ),
+ 
+ ################################## Modeling fitting sub-tab
   
       tabItem(tabName='prediction',
               h1("Prediction"),
@@ -232,9 +285,9 @@ ui <- dashboardPage(
      )
 
 
-
-
+###########################################
 # Define server logic ----
+
 server <- function(input, output, session) {
   # add a photo
   output$logo <- renderImage({
@@ -268,8 +321,7 @@ server <- function(input, output, session) {
     }
   })
   
-  
-  # Define a function to summarize numeric variables
+# Define a function to summarize numeric variables
   summarise_numeric_stats <- function(data) {
     numeric_columns <- data[, sapply(data, is.numeric)]
     selected_stats <- c(
@@ -405,12 +457,117 @@ server <- function(input, output, session) {
     
   }, height = 500)
 
-#####################################################################  
+ ##########################################################  
   # Modeling start here
-#####################################################################  
+  data <- reactive({raw_df})
+  
+  observeEvent(input$fit_models, {
+    # Perform test/train split
+    set.seed(110)
+    split_index <- createDataPartition(y = data()$NObeyesdad, p = input$split_percentage, list = FALSE)
+    train_data <- data()[split_index, ]
+    test_data <- data()[-split_index, ]
+    print(any(is.na(train_data))) # check missing values
+    print(any(is.na(test_data)))  
+    
+    # Prepare control parameters for train()
+    ctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 3)
+    
+    if (input$model_type == "Multinomial Regression") {
+      # Fit multinomial regression model
+      mr_fit <- train(NObeyesdad ~ ., 
+                      data = train_data[, c("NObeyesdad", input$mr_predictors)], 
+                      method = "multinom",
+                      preProcess = c("center", "scale"), 
+                      family = "multinomial",
+                      summaryFunction = multiClassSummary, # For multinomial 
+                      metric = "Accuracy",
+                      trace = FALSE,
+                      trControl = ctrl
+      )
+      
+      output$model_summary_mr <- renderPrint({summary(mr_fit)
+        print(mr_fit)
+      })
+      
+    } 
+    else if ("Random Forest" %in% input$model_type) {
+      # Fit random forest model
+      if (!is.null(input$rf_predictors) && length(input$rf_predictors) > 0) {
+        set.seed(123)  # Set seed for reproducibility
+        
+        # Ensure valid column names
+        valid_columns <- intersect(input$rf_predictors, colnames(train_data))
+        
+        if (length(valid_columns) == 0) {
+          # Handle the case where no valid predictors are selected for the random forest
+          output$rf_var_importance <- renderPlot({
+            ggplot() + ggtitle("No valid predictors selected for Random Forest")
+          })
+          return()
+        }
+        
+        rf_fit <- train(NObeyesdad ~ .,
+                        data = train_data[, c("NObeyesdad", valid_columns)],
+                        method = "rf",
+                        trControl = trainControl(method = "repeatedcv",
+                                                 number = input$rf_cv,
+                                                 repeats = 3,
+                                                 savePredictions = TRUE,
+                                                 classProbs = TRUE,
+                                                 summaryFunction = multiClassSummary,
+                                                 # Add any other parameters you need for tuning
+                        ),
+                        preProcess = c("center", "scale"),
+                        tuneGrid = data.frame(mtry = 1:(ncol(train_data[, valid_columns]) - 1)),
+                        importance = TRUE,
+                        allowParallel = FALSE  # Add this line to turn off parallel processing
+        )
+        
+        # Extract mtry, Accuracy values
+        rf_results <- as.data.frame(rf_fit$results[, c("mtry", "Accuracy")])
+        
+        # Put the results in a table and round to 2 decimals
+        output$rf_fit_results <- renderDataTable({
+          round(rf_results, 2)
+        })
+        
+        output$rf_var_importance <- renderPlot({
+          varImp(rf_fit)
+        })
+      } else {
+        # Handle no predictors are selected for the random forest
+        output$rf_var_importance <- renderPlot({
+          ggplot() + ggtitle("No predictors selected for Random Forest")
+        })
+      }
+      
+      # Variable Importance Plot
+      output$var_importance <- renderPlot({
+        varImpPlot(rf_fit$finalModel)
+      })
+      
+      # Model comparison on test set
+      predictions <- predict(rf_fit, newdata = test_data)
+      predictions_numeric <- as.numeric(predictions)
+      
+      # Check for NAs or non-numeric values in predictions_numeric
+      if (any(is.na(predictions_numeric)) || any(!is.finite(predictions_numeric))) {
+        # Handle the case where predictions contain NAs or non-numeric values
+        output$comparison_stats_rf <- renderText({
+          "Error: Predictions contain NAs or non-numeric values"
+        })
+      } else {
+        # Output Accuracy value as text
+        output$comparison_stats_rf <- renderText({
+          paste("Accuracy:", round(rf_fit$results$Accuracy[which.max(rf_fit$results$Accuracy)], 4))
+        })
+      }
+    }
+  }) 
  
-  
-  
+ ############################# 
+  # Prediction start here
   
   
 }
