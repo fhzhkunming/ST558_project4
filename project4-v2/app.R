@@ -351,7 +351,6 @@ server <- function(input, output, session) {
     result_df
   }
   
-
   # Output: Numeric Summary Table
   output$numeric_summary <- renderDataTable({
     df <- getData()
@@ -362,7 +361,6 @@ server <- function(input, output, session) {
       data.frame()  # Return an empty data frame if conditions are not met
     }
   }, options = list(dom = 't'))  # Set options for DT
-
 
   # Output of Two-way contingency table
   output$table <- renderDataTable({
@@ -398,7 +396,6 @@ server <- function(input, output, session) {
       updateSelectInput(session, "y", choices = "None")
     }
   })
-  
   
   # Create plot based on plot type
   output$plot <- renderPlot({
@@ -473,7 +470,7 @@ server <- function(input, output, session) {
     # Prepare control parameters for train()
     ctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 3)
     
-    if (input$model_type == "Multinomial Regression") {
+    if ("Multinomial Regression" %in% input$model_type) {
       # Fit multinomial regression model
       mr_fit <- train(NObeyesdad ~ ., 
                       data = train_data[, c("NObeyesdad", input$mr_predictors)], 
