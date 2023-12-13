@@ -28,7 +28,7 @@ To run this Shiny app, you need to install the required R packages. Open your R 
 install.packages(c('shiny', 'shinydashboard', 'tidyverse', 'ggplot2', 'caret', 'DT', 'metrics', 'nnet', 'dplyr', 'randomForest', 'shinyjs', 'lattice'))
 ```
 ## Run the app from GitHub
-You can run this Shiny app from GitHub using this using this code.
+You can run this Shiny app from GitHub using this code.
 ```R
 shiny::runGitHub("ST558_project4", "fhzhkunming", subdir = "project4-v2")
 
