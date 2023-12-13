@@ -92,8 +92,10 @@ ui <- dashboardPage(
                                "<b>Modeling Tab:</b> The 'Modeling' tab includes the following three sub-tabs:<br>",
                                "&nbsp;&nbsp;- <b>Modeling Info:</b> Get insights into the models used in the app along with their pros and cons.<br>",
                                "&nbsp;&nbsp;- <b>Model Fitting:</b> Customize your model fitting process by choosing a test/train split percentage. Select predictor variables for each model. For the random forest model, specify tuning parameter grids and cross-validation settings. Click 'Fit Model' to fit both models on the training data. View fit statistics and summaries, including a variable importance plot for the random forest model.<br>",
-                               "&nbsp;&nbsp;- <b>Prediction:</b> Utilize both models for predictions in the 'Prediction' tab.<br>",
+                               "&nbsp;&nbsp;- <b>Prediction:</b> Utilize both models for predictions in the “Prediction” sub-tab.<br>",
+                               "After finishing the model fitting process, navigate to the “Prediction” sub-tab. You can utilize either or both fitted models for predictions. Select the desired fitted model from the drop-down menu, scroll down to view the predictors chosen for fitting the model(s) in the relevant select input box, and click the “Get Predictions” button. The predicted probability will be displayed in the corresponding results area on the right-side panel. You can then modify predictors or their values to explore newly predicted probabilities. Note: attempting to predict using a model that hasn't been fitted will result in an error.<br>",
                                "Navigate through the tabs for a comprehensive analysis and model exploration."
+                               
                              )
                           )
                         )
@@ -273,7 +275,7 @@ ui <- dashboardPage(
          fluidRow(
            sidebarLayout(
              sidebarPanel(
-               sliderInput("split_percentage", "Choose Train/Test Split Percentage", value = 0.7, min = 0.1, max = 0.9, step = 0.1),
+               sliderInput("split_percentage", "Choose Train/Test Split Percentage (default = 0.7)", value = 0.7, min = 0.1, max = 0.9, step = 0.1),
                #Select Model type,
                selectInput("model_type", "Select Model Type", choices = c("Multinomial Regression", "Random Forest")),
                conditionalPanel(condition = "input.model_type == 'Multinomial Regression'",
