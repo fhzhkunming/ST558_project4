@@ -19,11 +19,13 @@ The application provides a comprehensive exploration of the obesity data, presen
 + [**`shinydashboard`**](https://cran.r-project.org/web/packages/shinydashboard/index.html) This package provides a theme on top of 'Shiny', making it easy to create attractive dashboards.  
 + [**`dplyr`**](https://cran.r-project.org/web/packages/dplyr/index.html) A fast, consistent tool for working with data frame like objects, both in memory and out of memory.
 + [**`lattice`**](https://cran.r-project.org/web/packages/lattice/index.html) A powerful and elegant high-level data visualization system.  
++ [**`shinyjs`**](https://cran.r-project.org/web/packages/shinyjs/index.html) Perform common useful JavaScript operations in Shiny apps that will greatly improve your apps without having to know any JavaScript.  
++ [**`randomForest`**](https://cran.r-project.org/web/packages/randomForest/) A package for lassification and regression based on a forest of trees using random inputs. 
 
 ## Install packages to run the app  
 To run this Shiny app, you need to install the required R packages. Open your R console or RStudio and run the following command to install the necessary packages:  
 ```R
-install.packages(c('shiny', 'shinydashboard', 'tidyverse', 'ggplot2', 'caret', 'DT', 'metrics', 'nnet', 'dplyr', 'lattice'))
+install.packages(c('shiny', 'shinydashboard', 'tidyverse', 'ggplot2', 'caret', 'DT', 'metrics', 'nnet', 'dplyr', 'randomForest', 'shinyjs', 'lattice'))
 ```
 ## Run the app from GitHub
 You can run this Shiny app from GitHub using this using this code.
