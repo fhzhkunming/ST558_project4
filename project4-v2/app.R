@@ -191,21 +191,42 @@ ui <- dashboardPage(
                          # two columns for each of the two items
                          column(6,
                                 #description of modeling
-                                h1("Generalized Linear Regression Model"),
+                                h1("Multinomial regression Model"),
                                 #box to contain description
                                 box(background = "light-blue", width = 12,
-                                    h4("What is a generalized linear model and what are its advantages and limitations?"),
-                                    h4("Generalized Linear models (GLMs) are a class of models that are an extension of linear regression models. They are used to model the relationship between a response variable and one or more predictor variables. GLMs are useful when the response variable is not normally distributed or when the variance of the response variable is not constant."),
+                                    h4("What is a Multinomial regression model and what are its advantages and limitations?"),
+                                    h4("Multinomial regression", "is a statistical method used to model the relationship between a categorical dependent variable and one or more independent variables. It is an extension of binary logistic regression model to handle cases where the dependent variable has more than two categories and there is no natural ordering among them."),
                                     h4(
                                       HTML(paste(
-                                        "<b>Advantages of GLMs:</b> handle a wide range of response distributions, model non-linear relationships, accommodate missing data, support variable selection and regularization.<br>",
-                                        "<b>Limitations of GLMs:</b> sensitivity to outliers, difficulty in interpretation, and computational intensity for large datasets.<br>",
-                                        "Mathematically, a GLM is defined as:<br>", "Y_i ~ Distribution(ui, ø) <br>",
-                                        "Where Yi is the response variable for the i-th observation, ui is the mean of the distribution, and ø donates the dispersion parameter.")
+                                        "<b>Advantages of Multinomial Regression:</b>",
+                                        "<p>Provides highly interpretable coefficients that quantify the relationship between your features and your outcome variable. More flexible than ordinal logistic regression.</p>",
+                                        "<b>Limitations of Multinomial Regression:</b>",
+                                        "<p>Not suitable for ordinal outcome variables that have a natural ordering. Multinomial regression models involve estimating a larger number of parameters compared to ordinal logistic regression models.</p>"
+                                        
+                                      )
                                          )
                                       ),
                                       
-                                    h4("")
+                                    h4(HTML(paste("<b>The general form of the multinomial logistic regression model is given by:</b>",
+                                                  "<p>Let \\(X\\) represent the vector of predictor variables, and let \\(Y\\) represent the categorical dependent variable with \\(K\\) categories. The model assumes a linear relationship between the predictors and the logits (log-odds) of the categories:</p>",
+                                                  "<p>\\[ \\text{log}\\left(\\frac{P(Y = k)}{P(Y = K)}\\right) = \\beta_{k0} + \\beta_{k1}X_1 + \\beta_{k2}X_2 + \\ldots + \\beta_{kp}X_p, \\]</p>",
+                                                  "<p>for \\(k = 1, 2, \\ldots, K-1\\), where:</p>",
+                                                  "<ul>",
+                                                  "<li>\\(P(Y = k)\\) is the probability of the dependent variable being in category \\(k\\),</li>",
+                                                  "<li>\\(P(Y = K)\\) is the reference category, and \\(K\\) is the total number of categories,</li>",
+                                                  "<li>\\(\\beta_{k0}\\) is the intercept for category \\(k\\),</li>",
+                                                  "<li>\\(\\beta_{k1}, \\beta_{k2}, \\ldots, \\beta_{kp}\\) are the coefficients for the predictor variables for category \\(k\\).</li>",
+                                                  "</ul>",
+                                                  "<p>Note: The last category, \\(K\\), is often chosen as the reference category, so its coefficients are set to zero. The model estimates the logits for each category relative to the reference category.</p>",
+                                                  "<p>The predicted probability of being in category \\(k\\) is obtained by applying the softmax function to the logits:</p>",
+                                                  "<p>\\[ P(Y = k) = \\frac{\\text{exp}(\\text{logit}_k)}{\\sum_{j=1}^{K}\\text{exp}(\\text{logit}_j)}, \\]</p>",
+                                                  "<p>where \\(\\text{logit}_k\\) is the logit for category \\(k\\).</p>",
+                                                  "<p>The parameters \\(\\beta_{k0}, \\beta_{k1}, \\ldots, \\beta_{kp}\\) are estimated from the data using maximum likelihood estimation. The model is typically fit using optimization algorithms.</p>"
+                                                  
+                                      
+                                    ))
+                                      
+                                    )
                                 )
                          ),
                          
@@ -219,12 +240,26 @@ ui <- dashboardPage(
                                     h4(
                                       HTML(paste(
                                         "<b>Advantages of Random Forests:</b> ensemble learning, improved accuracy, robustness to outliers, identifying the most important predictors, and enhancing model interpreting ability.<br>",
-                                        "<b>Limitations of Random Forest:</b> interpretation challenges, performance slowdown on large datasets, and challenges against advanced boosting algorithms.<br>",
-                                        "The prediction of the random forest model is given by:<br>", "y^ = 1/B∑T_i(X) <br>", "Here, B is the number of trees in the forest, Ti(X) represents the prediction of frome the i-th tree."
-                                                )
+                                        "<b>Limitations of Random Forest:</b> interpretation challenges, performance slowdown on large datasets, and challenges against advanced boosting algorithms.<br>"
+                                                              )
                                            )
                                       ),
-                                    h4("")
+                                    h4(
+                                      HTML(
+                                        paste(
+                                          "<b>Random Forest Regression Formula:</b>",
+                                          "<p>The prediction for a specific instance is calculated as the average of predictions from all trees and is given by:</p>",
+                                          "\\[ \\hat{y} = \\frac{1}{N} \\sum_{i=1}^{N} y_i \\]",
+                                          "<p>Where:</p>",
+                                          "<ul>",
+                                          "<li>\\( \\hat{y} \\) is the predicted value for a specific instance,</li>",
+                                          "<li>\\( N \\) is the number of trees in the forest, and</li>",
+                                          "<li>\\( y_i \\) is the prediction from the \\( i \\)-th tree.</li>",
+                                          "</ul>"
+                                          
+                                        )
+                                      )
+                                    )
                                 )
                          ) 
                     )       
