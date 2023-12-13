@@ -30,5 +30,11 @@ install.packages(c('shiny', 'shinydashboard', 'tidyverse', 'ggplot2', 'caret', '
 ## Run the app from GitHub
 You can run this Shiny app from GitHub using this using this code.
 ```R
-shiny::runGitHub("fhzhkunming/ST558_project4")
+shiny::runGitHub("ST558_project4", "fhzhkunming", subdir = "project4-v2")
+
+runUrl("https://github.com/fhzhkunming/ST558_project4/archive/HEAD.tar.gz",
+       subdir = "project4-v")
+
+# Run the app ----
+shinyApp(ui = ui, server = server)
 ```
