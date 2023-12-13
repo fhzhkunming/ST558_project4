@@ -20,7 +20,7 @@ The application provides a comprehensive exploration of the obesity data, presen
 + [**`dplyr`**](https://cran.r-project.org/web/packages/dplyr/index.html) A fast, consistent tool for working with data frame like objects, both in memory and out of memory.
 + [**`lattice`**](https://cran.r-project.org/web/packages/lattice/index.html) A powerful and elegant high-level data visualization system.  
 
-## Install packages to run tha app  
+## Install packages to run the app  
 To run this Shiny app, you need to install the required R packages. Open your R console or RStudio and run the following command to install the necessary packages:  
 ```R
 install.packages(c('shiny', 'shinydashboard', 'tidyverse', 'ggplot2', 'caret', 'DT', 'metrics', 'nnet', 'dplyr', 'lattice'))
