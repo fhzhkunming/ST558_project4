@@ -8,13 +8,14 @@ library(dplyr)
 library(caret)
 library(ggplot2)
 library(lattice)
+library(shinyjs)
 library(Metrics)
 library(tidyverse)
 library(randomForest)
 library(shinydashboard)
 
 # Read in data 
-  obesity <- read.csv("C:/Users/HFang/OneDrive - USDA/Documents/CIPM/Training/Statiscs/ST558/ST558_project4/ObesityDataSet.csv")
+  obesity <- read.csv("../ObesityDataSet.csv")
 
 # Pre-compute some variables to be used by app
   not_numeric <- sapply(names(obesity), function(x) !is.numeric(obesity[[x]]))
@@ -24,7 +25,7 @@ library(shinydashboard)
 # Define UI ----
 ui <- dashboardPage(
   dashboardHeader(title = div("A Comprehensive Investigation of Obesity Data", style = "font-size: 34px"), 
-  titleWidth = 1000),
+                              titleWidth = 1000),
   
   dashboardSidebar(
     sidebarMenu(
@@ -112,7 +113,7 @@ ui <- dashboardPage(
                            sidebarLayout(
                              sidebarPanel(
                              # filter the dataset based on CAEC
-                             h3(style = "color: red; font-size: 20px;", "Select consumption of food between meals:"),
+                             h3(style = "color: blue; font-size: 20px;", "Select consumption of food between meals (CAEC):"),
                              selectizeInput("caec", "CAEC", selected = "yes", choices = levels(factor(df$FAVC, levels = c("Always", "Sometimes", "Frequently", "no")))),
                              br(),
                              selectInput("plotType", "Plot Type",
@@ -137,8 +138,7 @@ ui <- dashboardPage(
                       )
                 ),
                
-              
-      tabPanel("Numeric Summary", 
+       tabPanel("Numeric Summary", 
                h4(style = "color: blue; font-size: 20px;", "Numeric summary is for numeric variables after filtering by CAEC."), 
                hr(),
                sidebarPanel(
@@ -170,7 +170,6 @@ ui <- dashboardPage(
             )
       ),
       
-                 
       tabPanel("Correlation", 
                h4(style = "color: blue; font-size: 20px;", "Correlation matrix is for numeric variables aftering filtering by CAEC"),
                hr(),
@@ -232,57 +231,94 @@ ui <- dashboardPage(
               )
       ),
 
- ################################## Model fitting sub-tab
+ ################################## 
+      #Model fitting sub-tab
  
-      tabItem(tabName='model_fitting',
-              h1("Model Fitting"),
-              # tabPanel("Model Fitting", textOutput("model_fit")
-              #         )
-              # titlePanel("Model Fitting"),
-              sidebarLayout(
-                sidebarPanel(
-                  sliderInput("split_percentage", "Choose Train/Test Split Percentage", value = 0.7, min = 0.1, max = 0.9, step = 0.1),
-                  #Select Model type,
-                  checkboxGroupInput("model_type", "Select Model Type", choices = c("Multinomial Regression", "Random Forest")),
-                  conditionalPanel(
-                    condition = "input.model_type.includes('Multinomial Regression')",
-                    selectInput("mr_predictors", "Select Multinomial Regression Predictors",
-                                choices = setdiff(colnames(obesity), "NObeyesdad"), multiple = TRUE),
-                  ),
-                  conditionalPanel(
-                    condition = "input.model_type.includes('Random Forest')",
-                    selectInput("rf_predictors", "Select Random Forest Predictors",
-                                choices = setdiff(colnames(obesity), "NObeyesdad"), multiple = TRUE),
-                    sliderInput("rf_cv", "Select Random Forest Cross Validation Number (default = 5)", min = 2, max = 10, value = 5),
-                  ),
-                  actionButton("fit_models", "Fit Models")
-                ),
-                
-                mainPanel(
-                  tabsetPanel(
-                    tabPanel("Multinomial Regression", 
-                             verbatimTextOutput("model_summary_mr"),
-                             textOutput("comparison_stats_mr")),
-                    tabPanel("Random Forest", 
-                             plotOutput("var_importance"),
-                             textOutput("comparison_stats_rf"),
-                             dataTableOutput("rf_fit_results")
+ tabItem(tabName = "model_fitting",
+         fluidRow(
+           sidebarLayout(
+             sidebarPanel(
+               sliderInput("split_percentage", "Choose Train/Test Split Percentage", value = 0.7, min = 0.1, max = 0.9, step = 0.1),
+               #Select Model type,
+               selectInput("model_type", "Select Model Type", choices = c("Multinomial Regression", "Random Forest")),
+               conditionalPanel(condition = "input.model_type == 'Multinomial Regression'",
+                                selectInput("mr_predictors", "Select Multinomial Regression Predictors",
+                                            choices = setdiff(colnames(obesity), "NObeyesdad"), multiple = TRUE)
+               ),
+               conditionalPanel(
+                 condition = "input.model_type == 'Random Forest'",
+                 selectInput("rf_predictors", "Select Random Forest Predictors",
+                             choices = setdiff(colnames(obesity), "NObeyesdad"), multiple = TRUE),
+                 sliderInput("rf_cv", "Select Random Forest Cross Validation Number (default = 5)", min = 2, max = 10, value = 5)
+               ),
+               # Add action button
+               actionButton("fit_models", "Fit Models")
+             ),
+             
+             
+             mainPanel(
+               tabsetPanel(
+                 tabPanel("Multinomial Regression", 
+                          verbatimTextOutput("model_summary_mr"),
+                          textOutput("comparison_stats_mr")),
+                 tabPanel("Random Forest", 
+                          plotOutput("var_importance"),
+                          textOutput("comparison_stats_rf"),
+                          dataTableOutput("rf_fit_results")
+                 )
+               )
+             )
+           )
+         )
+ ),
+ 
+ ###############################################
+ #Prediction start here
+ 
+ tabItem(tabName = "prediction",
+         tabPanel("Obesity Prediction", 
+                  sidebarLayout(
+                    sidebarPanel(
+                      h3("Input Values of Predictors"),
+                      selectInput("model_type", "Select Model", choices = c("Multinomial Regression", "Random Forest")),
+                      sliderInput("Age", "Select Age:", min = 14, max = 80, value = 30),
+                      sliderInput("Height", "Select Height:", min = 1.4, max = 2.0, value = 1.70),
+                      sliderInput("Weight", "Select Weight:", min = 39, max = 180, value = 65),
+                      selectInput("Gender", "Select Gender:", choices = list("Female","Male"), multiple = FALSE),
+                      selectInput("FCVC", "Select FCVC:", choices = list("1", "2", "3"), multiple = FALSE),
+                      selectInput("NCP", "Select NCP:", choices = list("1", "2", "3", "4"), multiple = FALSE),
+                      selectInput("FAVC", "Select FAVC:", choices = list("no","yes"), multiple = FALSE),
+                      selectInput("CH2O", "Select CH2O:", choices = list("1", "2", "3"), multiple = FALSE),
+                      selectInput("SMOKE", "Select SMOKE:", choices = list("no","yes"), multiple = FALSE),
+                      selectInput("CAEC", "Select CAEC:", choices = list("no", "Sometimes", "Frequently", "Always"), multiple = FALSE),
+                      selectInput("SCC", "Select SCC:", choices = list("no","yes"), multiple = FALSE),
+                      selectInput("FAF", "Select FAF:", choices = list("0", "1", "2", "3"), multiple = FALSE),
+                      selectInput("TUE","Select TUE:", choices = list("0", "1", "2"), multiple = FALSE),
+                      selectInput("CALC","Select CALC:",choices = list("no", "Sometimes", "Frequently", "Always"), multiple = FALSE),
+                      selectInput("MTRANS","Select MTRANS:",choices = list("Walking", "Public_Transportation", 
+                                                                           "Automobile", "Bike", "Motobike"), multiple = FALSE
+                      ),
+                      selectInput("family_history_with_overweight", "Select family_history_with_overweight:", choices = list("no", "yes"), multiple = FALSE),
+                      selectInput("mr_pred_pred", "Selected Predictors for Multinomial Regression", choices = NULL, multiple = TRUE),
+                      selectInput("rf_pred_pred", "Selected Predictors for Random Forest", choices = NULL, multiple = TRUE),
+                      actionButton("predict_button", "Get Predictions")
+                    ),
+                    
+                    # Show the generated prediction value
+                    mainPanel(
+                      h3("The predicted probability for different levels of obesity from Multinomial Regression"),
+                      br(),
+                      dataTableOutput("prediction_mr"),
+                      br(),
+                      h3("The predicted probability for different levels of obesity from Random Forest Regression"),
+                      dataTableOutput("probabilities_df")
                     )
                   )
-                )
-              )
-           ),
- 
- ################################## Modeling fitting sub-tab
-  
-      tabItem(tabName='prediction',
-              h1("Prediction"),
-              tabPanel("Prediction", textOutput("pred")
-                      )      
-                  )
-              )
-          )
-     )
+         )
+      )
+    )
+  )
+)
 
 
 ###########################################
@@ -291,7 +327,7 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   # add a photo
   output$logo <- renderImage({
-    list(src = "C:/Users/HFang/OneDrive - USDA/Documents/CIPM/Training/Statiscs/ST558/Project-4/Obesity.jpg",
+    list(src = "../Obesity.jpg",
          contentType = "image/jpeg", width = 600, height = 400,
          alt = "Logo")
   }, deleteFile = FALSE)
@@ -456,7 +492,13 @@ server <- function(input, output, session) {
 
  ##########################################################  
   # Modeling start here
-  data <- reactive({raw_df})
+  data <- reactive({
+    raw_df
+  })
+  
+  # Define reactive Values to store selected predictors for prediction
+  selected_mr_pred <- reactiveVal(NULL)
+  selected_rf_pred <- reactiveVal(NULL)
   
   observeEvent(input$fit_models, {
     # Perform test/train split
@@ -464,13 +506,12 @@ server <- function(input, output, session) {
     split_index <- createDataPartition(y = data()$NObeyesdad, p = input$split_percentage, list = FALSE)
     train_data <- data()[split_index, ]
     test_data <- data()[-split_index, ]
-    print(any(is.na(train_data))) # check missing values
-    print(any(is.na(test_data)))  
     
     # Prepare control parameters for train()
     ctrl <- trainControl(method = "repeatedcv", number = 5, repeats = 3)
     
-    if ("Multinomial Regression" %in% input$model_type) {
+    if (input$model_type == "Multinomial Regression") {#%in% input$model_type
+      
       # Fit multinomial regression model
       mr_fit <- train(NObeyesdad ~ ., 
                       data = train_data[, c("NObeyesdad", input$mr_predictors)], 
@@ -483,12 +524,33 @@ server <- function(input, output, session) {
                       trControl = ctrl
       )
       
-      output$model_summary_mr <- renderPrint({summary(mr_fit)
-        print(mr_fit)
-      })
+      saveRDS(mr_fit, "mr_model.RDS")
       
-    } 
-    else if ("Random Forest" %in% input$model_type) {
+      # Access the best-tuned parameters
+      best_tune <- mr_fit$bestTune
+      
+      output$model_summary_mr <- renderPrint(
+        {
+          # Display results of print(mr_fit) and best-tuned parameters
+          cat("Results of print(mr_fit):\n")
+          print(mr_fit)
+          
+          cat("\nBest-Tuned Parameters:\n")
+          print(best_tune)
+        }
+      )
+      
+      # Model comparison on the test set
+      predictions <- predict(mr_fit, newdata = test_data, type = "prob")
+      predictions_numeric <- as.numeric(predictions[, "Obesity_Type_III"])
+      
+      # Store selected predictors for multinomial regression model
+      selected_mr_pred(input$mr_predictors)
+      
+      # Reset selected predictors for random forest
+      selected_rf_pred(NULL)
+      
+    } else if (input$model_type == "Random Forest") {
       # Fit random forest model
       if (!is.null(input$rf_predictors) && length(input$rf_predictors) > 0) {
         set.seed(123)  # Set seed for reproducibility
@@ -521,14 +583,16 @@ server <- function(input, output, session) {
                         allowParallel = FALSE  # Add this line to turn off parallel processing
         )
         
+        saveRDS(rf_fit, "Random_Forest.RDS") # Save random forest fit to a RDS file
+        
         # Extract mtry, Accuracy values
-        rf_results <- as.data.frame(rf_fit$results[, c("mtry", "Accuracy")])
+        rf_results <- as.data.frame(rf_fit$results[, c("mtry", "Accuracy", "Kappa")])
         
         # Put the results in a table and round to 2 decimals
         output$rf_fit_results <- renderDataTable({
           round(rf_results, 2)
         })
-        
+        # Plot the variable importance
         output$rf_var_importance <- renderPlot({
           varImp(rf_fit)
         })
@@ -550,6 +614,7 @@ server <- function(input, output, session) {
       
       # Check for NAs or non-numeric values in predictions_numeric
       if (any(is.na(predictions_numeric)) || any(!is.finite(predictions_numeric))) {
+        
         # Handle the case where predictions contain NAs or non-numeric values
         output$comparison_stats_rf <- renderText({
           "Error: Predictions contain NAs or non-numeric values"
@@ -557,16 +622,141 @@ server <- function(input, output, session) {
       } else {
         # Output Accuracy value as text
         output$comparison_stats_rf <- renderText({
-          paste("Accuracy:", round(rf_fit$results$Accuracy[which.max(rf_fit$results$Accuracy)], 4))
+          paste("Accuracy:", round(rf_fit$results$Accuracy[which.max(rf_fit$results$Accuracy)], 4)
+          )
         })
       }
+      # Store selected predictors for random forest model
+      selected_rf_pred(input$rf_predictors)
+      # Reset selected predictors for multinomial regression
+      selected_mr_pred(NULL) 
     }
-  }) 
- 
- ############################# 
-  # Prediction start here
+  }
+  )
+  
+  ######################################
+  # Prediction 
+  # UI: Update selectInput choices based on selected model type for prediction
+  observe({
+    if (input$model_type == "Multinomial Regression") {
+      updateSelectInput(
+        session,
+        "mr_pred_pred",
+        choices = setdiff(colnames(raw_df), "NObeyesdad"), 
+        selected = selected_mr_pred()
+      )
+    } else if (input$model_type == "Random Forest") {
+      updateSelectInput(
+        session,
+        "rf_pred_pred",
+        choices = setdiff(colnames(raw_df), "NObeyesdad"), 
+        selected = selected_rf_pred()
+      )
+    }
+  })
   
   
+  # Read in the input values, and store them as a dataframe. 
+  input_df <- reactive({
+    data.frame(Gender = input$Gender,
+               Age = input$Age,
+               Height = input$Height,
+               FAVC = input$FAVC,
+               FCVC = input$FCVC,
+               NCP = input$NCP,
+               CAEC = input$CAEC,
+               SMOKE = input$SMOKE,
+               CH2O = input$CH2O,
+               SCC = input$SCC,
+               FAF = input$FAF,
+               TUE = input$TUE,
+               Weight = input$Weight,
+               CALC = input$CALC,
+               MTRANS = input$MTRANS,
+               family_history_with_overweight = input$family_history_with_overweight
+    )
+  })
+  
+  # Use thisJava Script function to highlight selected predictors
+  shinyjs::runjs(
+    "shinyjs.highlightPredictors = function(selector) {
+    $(selector).css({'border': '2px solid red'});
+  };"
+  )
+  
+  # Use this JavaScript function to remove highlighting
+  shinyjs::runjs(
+    "shinyjs.removeHighlight = function() {
+    $('input, select, textarea').css({'border': ''});
+  };"
+  )
+  
+  observeEvent(input$predict_button, {
+    
+    if (input$model_type == "Multinomial Regression") {
+      # read in model
+      model_mr <- readRDS("mr_model.RDS")
+      
+      pred_prob <- reactiveVal(NULL)
+      level_names <- reactiveVal(NULL)
+      
+      # Make predictions
+      observe({
+        pred_prob_val <- as.numeric(predict(model_mr, input_df(), type = "prob"))
+        # Get the levels of the response variable
+        level_names_val <- levels(factor(data()$NObeyesdad))  
+        pred_prob(pred_prob_val)
+        level_names(level_names_val)
+      })
+      
+      
+      # Create a data frame with probabilities
+      output$prediction_mr <- renderDataTable({
+        # Check if pred_prob and level_names are not NULL before creating the data frame
+        if (!is.null(pred_prob()) && !is.null(level_names())) {
+          # Combine level names and predicted probabilities into a data frame
+          probabilities_df <- data.frame(Level = factor(level_names(), 
+                                                        levels = level_names()
+          ), Probability = as.numeric(pred_prob())
+          )
+          probabilities_df}
+      })
+      
+    } else if (input$model_type == "Random Forest") {
+      
+      # read in model
+      model_rf <- readRDS("Random_Forest.RDS")
+      
+      pred_prob <- reactiveVal(NULL)
+      level_names <- reactiveVal(NULL)
+      
+      # Make predictions
+      observe({
+        pred_prob_val <- as.numeric(predict(model_rf, input_df(), type = "prob"))
+        # Get the levels of the response variable
+        level_names_val <- levels(factor(data()$NObeyesdad))  
+        pred_prob(pred_prob_val)
+        level_names(level_names_val)
+      })
+      
+      
+      # Create a data frame with probabilities
+      output$probabilities_df <- renderDataTable({
+        # Check if pred_prob and level_names are not NULL before creating the data frame
+        if (!is.null(pred_prob()) && !is.null(level_names())) {
+          # Combine level names and predicted probabilities into a data frame
+          probabilities_df <- data.frame(Level = factor(level_names(), 
+                                                        levels = level_names()
+          ), Probability = as.numeric(pred_prob()
+          )
+          )
+          probabilities_df
+          
+        }
+      })
+    } 
+    
+  })
 }
 
 # Run the app ----
