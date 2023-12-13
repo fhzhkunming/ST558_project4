@@ -271,8 +271,7 @@ ui <- dashboardPage(
            )
          )
  ),
- 
- ###############################################
+###############################################
  #Prediction start here
  
  tabItem(tabName = "prediction",
@@ -490,7 +489,7 @@ server <- function(input, output, session) {
     
   }, height = 500)
 
- ##########################################################  
+############################################
   # Modeling start here
   data <- reactive({
     raw_df
